@@ -1,5 +1,7 @@
 import asyncio
 import random
+import os
+from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -11,7 +13,7 @@ from friend import CHURCH_MEMBERS
 from strongholds import STRONGHOLDS
 from sermons import SERMONS
 
-BOT_TOKEN = "9296789254:AAHEjLvcNucRVHqUhi4w0wOZDS47z3lslj4"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "ВАШ_ТОКЕН_ЕСЛИ_НЕТ_ПЕРЕМЕННОЙ")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -19,6 +21,19 @@ dp = Dispatcher()
 back_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="🔙 Назад в меню", callback_data="back_to_menu")]
 ])
+
+async def health_check(request):
+    return web.Response(text="Bot is running!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"Веб-сервер запущен на порту {port}")
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
@@ -159,48 +174,10 @@ async def handle_buttons(callback: types.CallbackQuery):
 
 async def main():
     init_db() 
+    await start_web_server()
     print("Бот запущен. Ждем сообщений...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-    import os
-from aiohttp import web
-
-async def health_check(request):
-    return web.Response(text="Bot is running!")
-
-async def start_web_server():
-    app = web.Application()
-    app.router.add_get("/", health_check)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    port = int(os.environ.get("PORT", 8080))
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    print(f"Веб-сервер запущен на порту {port}")
-
-# Меняем функцию main(), чтобы она запускала и бота, и веб-сервер
-async def main():
-    init_db()
-    await start_web_server()  # <-- Запускаем сервер для Render
-    print("Бот запущен. Ждем сообщений...")
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-    import os
-from aiohttp import web
-
-async def health_check(request):
-    return web.Response(text="Bot is running!")
-
-async def start_web_server():
-    app = web.Application()
-    app.router.add_get("/", health_check)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    port = int(os.environ.get("PORT", 8080))
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    print(f"Веб-сервер запущен на порту {port}")
+                                                 
